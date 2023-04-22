@@ -2,6 +2,12 @@ use std::{error::Error, fs, path::PathBuf};
 
 use clap::{App, Arg};
 
+use thrift_parser::{document::Document, types::FieldType, Parser};
+
+mod constants;
+mod field_type;
+mod thrift_entities;
+
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let input_dir = PathBuf::from(config.input_thrift_idl_files_folder);
     if !input_dir.is_dir() {
@@ -18,7 +24,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         Err("Output dir is read-only!")?;
     }
 
-    let mut thrift_files: Vec<PathBuf> = Vec::new();
+    let mut thrift_entities: thrift_entities::ThriftEntities = Default::default();
     for entry in fs::read_dir(input_dir)? {
         let entry = entry?;
         if !entry.file_type()?.is_file() {
@@ -38,7 +44,39 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        thrift_files.push(entry.path());
+        let entry_path = entry.path();
+        let (remains, mut document) = Document::parse(entry_path.to_str().expect(&format!(
+            "Failed to convert path to thrift file to valid Unicode! {}",
+            entry_name.as_str()
+        )))
+        .expect(&format!("Failed to parse thrift file: {}, ", entry_name));
+
+        if remains.len() != 0 {
+            return Err(format!(
+                "Failed to fully process input thrift file {}, remains: {}",
+                entry_name, remains
+            ))?;
+        }
+
+        if !document.unions.is_empty() {
+            return Err(format!(
+                "Unions are not supported by Evernote Rust SDK generator at the moment"
+            ))?;
+        }
+
+        thrift_entities.consts.append(&mut document.consts);
+        thrift_entities.structs.append(&mut document.structs);
+        thrift_entities.exceptions.append(&mut document.exceptions);
+        thrift_entities.enums.append(&mut document.enums);
+        thrift_entities.includes.append(&mut document.includes);
+
+        for typedef in document.typedefs {
+            match typedef.old {
+                FieldType::String => thrift_entities.string_typedefs.push(typedef),
+                FieldType::Binary => thrift_entities.byte_array_typedefs.push(typedef),
+                _ => thrift_entities.primitive_type_typedefs.push(typedef),
+            }
+        }
     }
 
     // TODO: implement further
