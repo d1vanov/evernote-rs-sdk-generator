@@ -4,6 +4,7 @@ use clap::{App, Arg};
 
 use thrift_parser::{document::Document, types::FieldType, Parser};
 
+mod const_value;
 mod constants;
 mod field_type;
 mod thrift_entities;
