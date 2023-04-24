@@ -13,12 +13,11 @@ pub fn field_type_name(f: &FieldType) -> String {
         FieldType::String => String::from("String"),
         FieldType::Binary => String::from("Vec<u8>"),
         FieldType::Map(from, to) => format!(
-            "std::collections::HashMap<{}, {}>",
+            "HashMap<{}, {}>",
             field_type_name(&*from),
             field_type_name(&*to)
         ),
-        FieldType::Set(f) => format!("std::collections::HashSet<{}>", field_type_name(&*f)),
+        FieldType::Set(f) => format!("HashSet<{}>", field_type_name(&*f)),
         FieldType::List(f) => format!("Vec<{}>", field_type_name(&*f)),
-        _ => String::from(""),
     }
 }

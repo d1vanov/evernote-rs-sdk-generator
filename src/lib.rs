@@ -7,6 +7,7 @@ use thrift_parser::{document::Document, types::FieldType, Parser};
 mod const_value;
 mod constants;
 mod field_type;
+mod generator;
 mod thrift_entities;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -20,10 +21,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         Err("Output path is not a directory!")?;
     }
 
-    let output_dir_permissions = fs::metadata(output_dir)?.permissions();
+    let output_dir_permissions = fs::metadata(&output_dir)?.permissions();
     if output_dir_permissions.readonly() {
         Err("Output dir is read-only!")?;
     }
+
+    let output_dir_os_str = output_dir.as_os_str();
+    let output_dir_str = match output_dir_os_str.to_str() {
+        Some(s) => s,
+        None => return Err("Cannot convert path to output dir to valid Unicode!")?,
+    };
 
     let mut thrift_entities: thrift_entities::ThriftEntities = Default::default();
     for entry in fs::read_dir(input_dir)? {
@@ -45,12 +52,23 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        let entry_path = entry.path();
-        let (remains, mut document) = Document::parse(entry_path.to_str().expect(&format!(
-            "Failed to convert path to thrift file to valid Unicode! {}",
-            entry_name.as_str()
-        )))
-        .expect(&format!("Failed to parse thrift file: {}, ", entry_name));
+        // TODO: remove this when no longer necessary
+        if !entry_name.starts_with("Limits") {
+            continue;
+        }
+
+        let entry_content = fs::read_to_string(entry.path())?;
+        let parse_result = Document::parse(&entry_content);
+        let (remains, mut document) = match parse_result {
+            Ok((r, d)) => (r, d),
+            Err(e) => {
+                return Err(format!(
+                    "Cannot parse thrift file {}: {}",
+                    entry_name,
+                    e.to_string()
+                ))?
+            }
+        };
 
         if remains.len() != 0 {
             return Err(format!(
@@ -80,9 +98,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // TODO: implement further
-
-    Ok(())
+    generator::generate(&output_dir_str, &thrift_entities)
 }
 
 #[derive(Debug)]
@@ -100,15 +116,11 @@ impl Config {
             .arg(
                 Arg::with_name("input")
                     .help("Input directory with Evernote SDK thrift IDL files")
-                    .short("i")
-                    .long("input")
                     .required(true),
             )
             .arg(
                 Arg::with_name("output")
                     .help("Output directory for generated Evernote Rust SDK source code")
-                    .short("o")
-                    .long("output")
                     .required(true),
             )
             .get_matches();
