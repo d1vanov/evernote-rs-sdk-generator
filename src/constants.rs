@@ -41,10 +41,18 @@ pub fn generate_constants(
     for constant in &entities.consts {
         bw.write(
             format!(
-                "pub const {}: {} = {}\n",
+                "{}pub const {}: {} = {}\n{}",
+                match &constant.doc_comment {
+                    Some(c) => format!("/**\n {}\n */\n", c.as_str().trim()),
+                    None => String::new(),
+                },
                 &constant.name.as_str(),
                 field_type::field_type_name(&constant.type_, true),
-                const_value::const_value_repr(&constant.value, true, &|_| true)
+                const_value::const_value_repr(&constant.value, true, &|_| true),
+                match &constant.doc_comment {
+                    Some(_) => "\n",
+                    None => "",
+                }
             )
             .as_bytes(),
         )?;

@@ -170,7 +170,7 @@ dependencies = [
 [[package]]
 name = "thrift-parser"
 version = "0.0.6"
-source = "git+https://github.com/d1vanov/thrift-parser.git#541dcfbc798807cc68224ce6814a1802117f96d0"
+source = "git+https://github.com/d1vanov/thrift-parser.git#cb4d29c8532371ce293f29b4f36c0927f94620ef"
 dependencies = [
  "derive-newtype",
  "float-cmp",
