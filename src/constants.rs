@@ -43,8 +43,8 @@ pub fn generate_constants(
             format!(
                 "pub const {}: {} = {}\n",
                 &constant.name.as_str(),
-                field_type::field_type_name(&constant.type_),
-                const_value::const_value_repr(&constant.value)
+                field_type::field_type_name(&constant.type_, true),
+                const_value::const_value_repr(&constant.value, true, &|_| true)
             )
             .as_bytes(),
         )?;
