@@ -52,11 +52,6 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        // TODO: remove this when no longer necessary
-        if !entry_name.starts_with("Limits") {
-            continue;
-        }
-
         let entry_content = fs::read_to_string(entry.path())?;
         let parse_result = Document::parse(&entry_content);
         let (remains, mut document) = match parse_result {
