@@ -3,7 +3,7 @@ use std::{error::Error, fs::File};
 
 use thrift_parser::types::FieldType;
 
-use crate::{const_value, field_type, thrift_entities};
+use crate::{comment, const_value, field_type, thrift_entities};
 
 fn constants_uses(entities: &thrift_entities::ThriftEntities) -> &'static str {
     let mut has_set = false;
@@ -38,20 +38,27 @@ pub fn generate_constants(
         bw.write(format!("{}\n\n", uses).as_bytes())?;
     }
 
-    for constant in &entities.consts {
+    for (i, constant) in entities.consts.iter().enumerate() {
         bw.write(
             format!(
                 "{}pub const {}: {} = {}\n{}",
                 match &constant.doc_comment {
-                    Some(c) => format!("/**\n {}\n */\n", c.as_str().trim()),
+                    Some(c) => format!(
+                        "/**\n{}\n */\n",
+                        comment::preprocess_comment_contents(c.as_str().trim())
+                    ),
                     None => String::new(),
                 },
                 &constant.name.as_str(),
                 field_type::field_type_name(&constant.type_, true),
                 const_value::const_value_repr(&constant.value, true, &|_| true),
-                match &constant.doc_comment {
-                    Some(_) => "\n",
-                    None => "",
+                if i < entities.consts.len() - 1 {
+                    match &constant.doc_comment {
+                        Some(_) => "\n",
+                        None => "",
+                    }
+                } else {
+                    ""
                 }
             )
             .as_bytes(),

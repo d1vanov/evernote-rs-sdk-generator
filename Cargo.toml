@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thrift-parser = { git = "https://github.com/d1vanov/thrift-parser.git" }
 clap = "~2.33.0"
+lazy_static = "1.4.0"
+regex = "1"
+thrift-parser = { git = "https://github.com/d1vanov/thrift-parser.git" }
