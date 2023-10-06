@@ -41,7 +41,7 @@ pub fn generate_constants(
     for (i, constant) in entities.consts.iter().enumerate() {
         bw.write(
             format!(
-                "{}pub const {}: {} = {}\n{}",
+                "{}pub const {}: {} = {};\n{}",
                 match &constant.doc_comment {
                     Some(c) => format!(
                         "/**\n{}\n */\n",
